@@ -4,7 +4,13 @@ const itemList = document.getElementById('item-list');
 const clearBtn = document.getElementById('clear');
 const itemFilter = document.querySelector('.filter');
 
-function addItem(e) {
+function displayItems() {
+  const itemsFromStorage = getItemFromStorage();
+  itemsFromStorage.forEach((item) => addItemToDOM(item));
+  checkUI();
+}
+
+function onAddItemSubmit(e) {
   e.preventDefault();
 
   let newItem = itemInput.value;
@@ -14,14 +20,9 @@ function addItem(e) {
     return;
   }
 
-  const li = document.createElement('li');
-  const text = document.createTextNode(newItem);
-  li.appendChild(text);
+  addItemToDOM(newItem);
 
-  const btn = createBtn('remove-item btn-link text-red');
-  li.appendChild(btn);
-
-  itemList.appendChild(li);
+  addItemToStorage(newItem);
 
   checkUI();
   itemInput.value = '';
@@ -42,12 +43,65 @@ function createIcon(classes) {
   return icon;
 }
 
-function removeItem(e) {
+function addItemToDOM(item) {
+  const li = document.createElement('li');
+  const text = document.createTextNode(item);
+  li.appendChild(text);
+
+  const btn = createBtn('remove-item btn-link text-red');
+  li.appendChild(btn);
+
+  itemList.appendChild(li);
+}
+
+function getItemFromStorage() {
+  let itemFromLocalStorage;
+
+  if (localStorage.getItem('items') === null) {
+    itemFromLocalStorage = [];
+  } else {
+    itemFromLocalStorage = JSON.parse(localStorage.getItem('items'));
+  }
+
+  return itemFromLocalStorage;
+}
+
+function addItemToStorage(item) {
+  const itemFromStorage = getItemFromStorage();
+
+  itemFromStorage.push(item);
+  localStorage.setItem('items', JSON.stringify(itemFromStorage));
+}
+
+function removeFromStorage(item) {
+  let itemFromStorage = getItemFromStorage();
+
+  itemFromStorage = itemFromStorage.filter((i) => i !== item);
+  localStorage.setItem('items', JSON.stringify(itemFromStorage));
+}
+
+function checkUI() {
+  const items = document.querySelectorAll('li');
+
+  if (items.length === 0) {
+    (clearBtn.style.display = 'none'), (itemFilter.style.display = 'none');
+  } else {
+    clearBtn.style.display = 'block';
+    itemFilter.style.display = 'block';
+  }
+}
+
+function onClickItem(e) {
   if (e.target.parentElement.classList.contains('remove-item')) {
-    if (confirm('Are you sure?')) {
-      e.target.parentElement.parentElement.remove();
-      checkUI();
-    }
+    removeItem(e.target.parentElement.parentElement);
+  }
+}
+
+function removeItem(item) {
+  if (confirm('Are you sure?')) {
+    item.remove();
+    removeFromStorage(item.textContent);
+    checkUI();
   }
 }
 
@@ -56,10 +110,11 @@ function clearItems() {
     itemList.removeChild(itemList.firstChild);
   }
 
+  localStorage.removeItem('items');
   checkUI();
 }
 
-function contentFilter(e) {
+function filterData(e) {
   const items = document.querySelectorAll('li');
   const text = e.target.value.trim().toLowerCase();
 
@@ -74,19 +129,13 @@ function contentFilter(e) {
   });
 }
 
-function checkUI() {
-  const items = document.querySelectorAll('li');
-
-  if (items.length === 0) {
-    (clearBtn.style.display = 'none'), (itemFilter.style.display = 'none');
-  } else {
-    clearBtn.style.display = 'block';
-    itemFilter.style.display = 'block';
-  }
+function init() {
+  itemForm.addEventListener('submit', onAddItemSubmit);
+  itemList.addEventListener('click', onClickItem);
+  clearBtn.addEventListener('click', clearItems);
+  itemFilter.addEventListener('input', filterData);
+  document.addEventListener('DOMContentLoaded', displayItems);
+  checkUI();
 }
-itemForm.addEventListener('submit', addItem);
-itemList.addEventListener('click', removeItem);
-clearBtn.addEventListener('click', clearItems);
-itemFilter.addEventListener('input', contentFilter);
 
-checkUI();
+init();
