@@ -3,6 +3,9 @@ const itemForm = document.getElementById('item-form');
 const itemList = document.getElementById('item-list');
 const clearBtn = document.getElementById('clear');
 const itemFilter = document.querySelector('.filter');
+const formBtn = document.querySelector('.btn');
+
+let isEditMode = false;
 
 function displayItems() {
   const itemsFromStorage = getItemFromStorage();
@@ -18,6 +21,21 @@ function onAddItemSubmit(e) {
   if (newItem === '' || newItem.trim() === '') {
     alert('Please add value');
     return;
+  }
+
+  if (isEditMode) {
+    const itemToEdit = itemList.querySelector('.edit-mode');
+
+    removeFromStorage(itemToEdit.textContent);
+    itemToEdit.classList.remove('edit-mode');
+    itemToEdit.remove();
+
+    isEditMode = false;
+  } else {
+    if (checkIfItemExist(newItem)) {
+      alert('Item is already exist!');
+      return;
+    }
   }
 
   addItemToDOM(newItem);
@@ -81,6 +99,7 @@ function removeFromStorage(item) {
 }
 
 function checkUI() {
+  itemInput.value = '';
   const items = document.querySelectorAll('li');
 
   if (items.length === 0) {
@@ -89,12 +108,38 @@ function checkUI() {
     clearBtn.style.display = 'block';
     itemFilter.style.display = 'block';
   }
+
+  formBtn.innerHTML = `<i class="fa-solid fa-plus"></i> Add Item`;
+  formBtn.style.backgroundColor = '#333';
+
+  isEditMode = false;
 }
 
 function onClickItem(e) {
   if (e.target.parentElement.classList.contains('remove-item')) {
     removeItem(e.target.parentElement.parentElement);
+  } else {
+    setItemToTrue(e.target);
   }
+}
+
+function checkIfItemExist(item) {
+  const itemFromStorage = getItemFromStorage();
+
+  return itemFromStorage.includes(item);
+}
+
+function setItemToTrue(item) {
+  isEditMode = true;
+
+  itemList
+    .querySelectorAll('li')
+    .forEach((i) => i.classList.remove('edit-mode'));
+
+  item.classList.add('edit-mode');
+  formBtn.innerHTML = `<i class="fa-solid fa-pen"></i> Update Item`;
+  formBtn.style.backgroundColor = '#228B22';
+  itemInput.value = item.textContent;
 }
 
 function removeItem(item) {
